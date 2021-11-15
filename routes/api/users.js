@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const User = require("../../models/User");
+const keys = require("../../config/keys")
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken")
 
 router.get("/test", (req, res) => {
   res.json({ msg: "This is the users route" });
@@ -16,7 +19,6 @@ router.get("/test", (req, res) => {
 //     });
 //   }
 // );
-const bcrypt = require("bcryptjs");
 
 router.post("/register", (req, res) => {
   // Check to make sure nobody has already registered with a duplicate email
@@ -58,7 +60,22 @@ router.post("/login", (req, res) => {
     }
     bcrypt.compare(password, user.password).then((isMatch) => {
       if (isMatch) {
-        res.json({ msg: "Success" });
+        const payload = {
+          id: user.id,
+          handle: user.handle,
+          email: user.email 
+        }
+        jwt.sign(
+          payload,
+          keys.secretOrKey,
+          {expiresIn: 3600},
+          (err, token) => {
+            res.json({
+              sucess: true,
+              token: "Bearer" + token
+            })
+          }
+        )
       } else {
         return res.status(400).json({ password: "Incorrect password" });
       }
